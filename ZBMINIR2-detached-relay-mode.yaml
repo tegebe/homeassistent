@@ -1,0 +1,59 @@
+blueprint:
+  name: ZBMINIR2 detached relay mode (toggle lights + plugs)
+  description: Use ZBMINIR2 in detached relay mode to toggle lights and/or smart plugs (e.g., Nous A1Z) without cutting power.
+  domain: automation
+  source_url: https://github.com/alexsotoaguilera/homeassistant/tree/main/blueprints/automation/alexsotoaguilera/ZBMINIR2-detached-relay-mode.yaml
+  author: Alex Soto Aguilera (modified)
+
+  input:
+    zbminir2_device:
+      name: ZBMINIR2 device
+      description: ZBMINIR2 device, ensure you activated "Detach relay mode"
+      selector:
+        device:
+          filter:
+            manufacturer: SONOFF
+            model: Zigbee smart switch
+          multiple: false
+
+    controlled_targets:
+      name: Toggle target entities
+      description: Entities to toggle (lights and/or switches like Nous A1Z).
+      selector:
+        target:
+          entity:
+            domain:
+              - light
+              - switch
+
+mode: single
+
+trigger:
+  - platform: device
+    domain: mqtt
+    device_id: !input zbminir2_device
+    type: action
+    subtype: toggle
+
+variables:
+  zbminir2_device: !input zbminir2_device
+  zbminir2_switch: "{{ device_entities(zbminir2_device)[0] }}"
+
+action:
+  - choose:
+      - conditions:
+          - alias: ZBMINIR2 switch is OFF
+            condition: template
+            value_template: "{{ states(zbminir2_switch) == 'off' }}"
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: "{{ zbminir2_switch }}"
+
+      - conditions:
+          - alias: ZBMINIR2 switch is ON
+            condition: template
+            value_template: "{{ states(zbminir2_switch) == 'on' }}"
+        sequence:
+          - service: homeassistant.toggle
+            target: !input controlled_targets
