@@ -2,8 +2,8 @@ blueprint:
   name: ZBMINIR2 detached relay mode (toggle lights + plugs)
   description: Use ZBMINIR2 in detached relay mode to toggle lights and/or smart plugs (e.g., Nous A1Z) without cutting power.
   domain: automation
-  source_url: https://github.com/alexsotoaguilera/homeassistant/tree/main/blueprints/automation/alexsotoaguilera/ZBMINIR2-detached-relay-mode.yaml
   author: Alex Soto Aguilera (modified)
+  source_url: https://github.com/alexsotoaguilera/homeassistant/tree/main/blueprints/automation/alexsotoaguilera/ZBMINIR2-detached-relay-mode.yaml
 
   input:
     zbminir2_device:
@@ -34,6 +34,13 @@ trigger:
     device_id: !input zbminir2_device
     type: action
     subtype: toggle
+
+# Debounce: ignore duplicate triggers within 0.8s
+condition:
+  - condition: template
+    value_template: >
+      {% set lt = this.attributes.last_triggered %}
+      {{ lt is none or (as_timestamp(now()) - as_timestamp(lt)) > 0.8 }}
 
 variables:
   zbminir2_device: !input zbminir2_device
